@@ -155,6 +155,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
     var detecting by remember { mutableStateOf(false) }
     var replaceTarget by remember { mutableStateOf<Pair<DetectedLine, Int?>?>(null) }
     var forceOcr by remember { mutableIntStateOf(0) }
+    var langDialog by remember { mutableStateOf(false) }
     fun bmpFor(f: File): ImageBitmap? = bitmaps[f] ?: BitmapFactory.decodeFile(f.path)?.asImageBitmap()?.also { bitmaps[f] = it }
 
     val pageBmp by produceState<Bitmap?>(null, page) { value = null; value = withContext(Dispatchers.IO) { runCatching { doc.render(page, 1400) }.getOrNull() } }
@@ -163,7 +164,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
 
     LaunchedEffect(mode, page, forceOcr) {
         if (mode != EMode.EDIT_TEXT) return@LaunchedEffect
-        val wantOcr = forceOcr > 0 && detected[page]?.firstOrNull()?.fromOcr != true
+        val wantOcr = forceOcr > 0
         if (detected.containsKey(page) && !wantOcr) return@LaunchedEffect
         detecting = true
         try {
@@ -174,15 +175,16 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                 info = "Tap any line to edit it"
             } else {
                 info = "Reading the page with OCR…"
+                var failure: String? = null
                 val lines = withContext(Dispatchers.Default) {
                     runCatching {
                         val size = doc.pageSize(page)
-                        val bmp = withContext(Dispatchers.IO) { doc.render(page, (size.width * 3f).toInt().coerceIn(1400, 2600)) }
-                        TextEdit.ocrLines(page, bmp)
-                    }.getOrElse { emptyList() }
+                        val bmp = withContext(Dispatchers.IO) { doc.render(page, (size.width * 4f).toInt().coerceIn(1600, 3200)) }
+                        TextEdit.ocrLines(page, bmp, vm.ocrLang) { msg -> info = msg }
+                    }.getOrElse { failure = it.message; emptyList() }
                 }
                 detected[page] = lines
-                info = if (lines.isEmpty()) "No text found on this page" else "Found ${lines.size} lines with OCR. Tap one to edit it"
+                info = failure ?: if (lines.isEmpty()) "No text found. Tap \"OCR page\" to pick the document language" else "Found ${lines.size} lines with OCR. Tap one to edit it"
             }
         } finally { detecting = false; forceOcr = 0 }
     }
@@ -239,7 +241,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                         val sel = selected?.let { items.getOrNull(it) }
                         if (sel != null) IconButton(onClick = { items.removeAt(selected!!); selected = null }) { Icon(Icons.Outlined.Delete, "Delete selected") }
                         if (tool.id == "crop") { Text("All pages", style = MaterialTheme.typography.bodySmall); Switch(checked = cropAll, onCheckedChange = { cropAll = it }, modifier = Modifier.padding(start = 6.dp)) }
-                        if (mode == EMode.EDIT_TEXT) TextButton(onClick = { forceOcr++ }, enabled = !detecting) { Icon(Icons.Outlined.DocumentScanner, null, Modifier.size(18.dp)); HSpace(6.dp); Text(if (detecting) "Reading…" else "OCR page") }
+                        if (mode == EMode.EDIT_TEXT) TextButton(onClick = { langDialog = true }, enabled = !detecting) { Icon(Icons.Outlined.DocumentScanner, null, Modifier.size(18.dp)); HSpace(6.dp); Text(if (detecting) "Reading…" else "OCR page") }
                         if (tool.id == "redact") TextButton(onClick = { searchDialog = true }) { Icon(Icons.Outlined.Search, null, Modifier.size(18.dp)); HSpace(6.dp); Text("Find text") }
                     }
                     if (modes.size > 1) Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -402,6 +404,9 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
             confirmButton = { TextButton(onClick = { if (text.isNotBlank()) { items += EditItem.Text(page, x, y, text, textSize, color); selected = items.lastIndex }; textDialog = null }) { Text("Add") } },
             dismissButton = { TextButton(onClick = { textDialog = null }) { Text("Cancel") } },
         )
+    }
+    if (langDialog) OcrLanguageDialog(vm.ocrLang, onDismiss = { langDialog = false }) { code ->
+        vm.updateOcrLang(code); langDialog = false; forceOcr++
     }
     replaceTarget?.let { (line, index) ->
         var text by remember(line) { mutableStateOf(line.text) }

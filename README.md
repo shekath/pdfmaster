@@ -10,8 +10,8 @@ Download the APK for your phone from [`apk/`](apk/) and open it (allow "Install 
 
 | File | For |
 |---|---|
-| `PDFMaster-1.1.0-arm64-v8a.apk` | Almost every phone from 2017 onwards |
-| `PDFMaster-1.1.0-armeabi-v7a.apk` | Older 32-bit phones |
+| `PDFMaster-1.2.0-arm64-v8a.apk` | Almost every phone from 2017 onwards |
+| `PDFMaster-1.2.0-armeabi-v7a.apk` | Older 32-bit phones |
 
 Requires Android 8.0 or newer.
 
@@ -35,7 +35,7 @@ The side menu (☰) lists every tool by category and has a Light / Dark / System
 - PDF → Office: "Editable" mode rebuilds text and detects simple tables; "Exact look" places page images.
 - PDF/A adds identification, XMP metadata and an sRGB output intent; use a validator (e.g. veraPDF) when strict compliance matters.
 - Translation downloads each language model (~30 MB) once; HTML → PDF needs internet for the page. Everything else works offline.
-- OCR recognises Latin-script languages.
+- OCR languages: English and other Latin-script languages (built in), Hindi, Marathi, Nepali and Sanskrit (Google ML Kit via Play services, with a Tesseract fallback), and Bengali, Assamese, Gujarati, Punjabi, Odia, Tamil, Telugu, Kannada, Malayalam and Urdu (Tesseract; about 6–12 MB of language data downloads once per language). Choose the language in the OCR tool, in Scan to PDF, from "OCR page" in the editor, or in the side menu.
 - Edit text: on PDFs with a real text layer the original words are removed and rewritten in place (Roboto font, matching size, colour and weight). On scanned pages the line is covered with the sampled background colour and new, searchable text is written on top.
 - Scan to PDF uses Google Play services' document scanner.
 
@@ -48,4 +48,4 @@ The side menu (☰) lists every tool by category and has a Light / Dark / System
 
 A `release-keystore.jks` in the project root (git-ignored) is used for signing if present; otherwise the debug key is used.
 
-Built with Kotlin, Jetpack Compose, [PdfBox-Android](https://github.com/TomRoush/PdfBox-Android) (Apache 2.0) and Google ML Kit.
+Built with Kotlin, Jetpack Compose, [PdfBox-Android](https://github.com/TomRoush/PdfBox-Android) (Apache 2.0), Google ML Kit, [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) (Apache 2.0) and Noto fonts (SIL Open Font License 1.1, bundled in `app/src/main/assets/fonts`).

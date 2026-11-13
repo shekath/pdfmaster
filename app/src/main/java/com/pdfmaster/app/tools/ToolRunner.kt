@@ -96,7 +96,7 @@ object ToolRunner {
                 val mode = o["output"] ?: "pdf"
                 val pdf = if (mode != "txt") out("ocr") else null
                 val txt = if (mode != "pdf") out("text", "txt") else null
-                val lines = Ocr.run(first!!, pdf, txt, p("Recognising text…"))
+                val lines = Ocr.run(first!!, pdf, txt, o["lang"] ?: "latin", progress)
                 RunResult(listOfNotNull(pdf, txt), if (lines == 0) "No text was recognised." else "Recognised $lines lines of text.")
             }
             "jpg2pdf" -> {

@@ -9,9 +9,6 @@ import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.graphics.state.RenderingMode
 import kotlinx.coroutines.tasks.await
@@ -24,48 +21,44 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-/** On-device OCR with ML Kit: adds an invisible, searchable text layer behind each page. */
+/** On-device OCR: adds an invisible, searchable text layer behind each page. */
 object Ocr {
-    suspend fun run(input: File, outPdf: File?, outTxt: File?, progress: (Float) -> Unit): Int {
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    suspend fun run(input: File, outPdf: File?, outTxt: File?, lang: String, progress: (Float, String) -> Unit): Int {
         var lines = 0
         val text = StringBuilder()
+        val name = OcrLangs.get(lang).name.substringBefore(" ·")
+        val session = OcrSession.open(AppCtx.app, lang) { progress(-1f, it) }
         try {
             Render.Doc(input).use { r ->
                 PdfOps.open(input).use { doc ->
-                    val font = PdfOps.loadFont(doc)
                     for (i in 0 until r.pageCount) {
+                        progress(i.toFloat() / r.pageCount, "Recognising $name text…")
                         val size = r.pageSize(i)
-                        val targetW = (size.width * 3f).roundToInt().coerceIn(1200, 3000)
+                        val targetW = (size.width * 4f).roundToInt().coerceIn(1600, 3200)
                         val bmp = r.render(i, targetW)
-                        val result = recognizer.process(InputImage.fromBitmap(bmp, 0)).await()
+                        val result = session.recognize(bmp)
                         val sx = size.width / bmp.width; val sy = size.height / bmp.height
-                        val page = doc.getPage(i)
                         if (i > 0) text.append("\n\n")
-                        if (outPdf != null) PdfOps.drawVisual(doc, page) { cs, _, h ->
+                        if (outPdf != null) PdfOps.drawVisual(doc, doc.getPage(i)) { cs, _, h ->
                             cs.setRenderingMode(RenderingMode.NEITHER)
-                            for (block in result.textBlocks) for (line in block.lines) {
-                                val box = line.boundingBox ?: continue
-                                val s = PdfOps.safeText(font, line.text)
-                                if (s.isBlank()) continue
+                            for (line in result) {
+                                val box = line.box
                                 val bw = box.width() * sx; val bh = box.height() * sy
-                                val unitW = font.getStringWidth(s) / 1000f
+                                val unitW = Fonts.unitWidth(doc, line.text)
                                 if (unitW <= 0f) continue
                                 val fs = (bw / unitW).coerceIn(1f, max(2f, bh * 1.6f))
-                                cs.beginText(); cs.setFont(font, fs)
-                                cs.newLineAtOffset(box.left * sx, h - box.bottom * sy + bh * 0.2f)
-                                cs.showText(s); cs.endText()
+                                Fonts.show(cs, doc, line.text, box.left * sx, h - box.bottom * sy + bh * 0.2f, fs)
                                 lines++
                             }
-                        } else lines += result.textBlocks.sumOf { it.lines.size }
-                        text.append(result.text)
+                        } else lines += result.size
+                        text.append(result.joinToString("\n") { it.text })
                         bmp.recycle()
-                        progress((i + 1f) / r.pageCount)
+                        progress((i + 1f) / r.pageCount, "Recognising $name text…")
                     }
                     if (outPdf != null) doc.save(outPdf)
                 }
             }
-        } finally { recognizer.close() }
+        } finally { session.close() }
         outTxt?.writeText(text.toString())
         return lines
     }

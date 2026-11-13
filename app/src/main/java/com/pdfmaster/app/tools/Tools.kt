@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.pdfmaster.app.engine.OcrLangs
 import com.pdfmaster.app.engine.Translator
 
 enum class Category(val title: String, val tint: Color, val icon: ImageVector) {
@@ -79,6 +80,7 @@ object Tools {
         Tool("organize", "Organize PDF", "Reorder, rotate, delete or add pages", Icons.Outlined.GridView, Category.ORGANIZE, Input.PDF, "Open organizer", Mode.ORGANIZE),
         Tool("scan", "Scan to PDF", "Capture paper documents with your camera", Icons.Outlined.DocumentScanner, Category.ORGANIZE, Input.NONE, "Start scanning", Mode.SCAN, options = listOf(
             Opt.Toggle("ocr", "Make text searchable (OCR)", false),
+            Opt.Dropdown("lang", "Document language", { OcrLangs.choices }, "latin", visibleIf = { it["ocr"] == "true" }),
         )),
 
         // Optimize
@@ -86,7 +88,8 @@ object Tools {
             Opt.Choice("level", "Compression", listOf("extreme" to "Extreme", "recommended" to "Recommended", "low" to "Light"), "recommended"),
         )),
         Tool("repair", "Repair PDF", "Recover data from a damaged PDF", Icons.Outlined.Healing, Category.OPTIMIZE, Input.PDF, "Repair PDF"),
-        Tool("ocr", "OCR PDF", "Make scanned PDFs searchable and selectable", Icons.Outlined.TextFields, Category.OPTIMIZE, Input.PDF, "Run OCR", options = listOf(
+        Tool("ocr", "OCR PDF", "Searchable text from scans · English, Hindi & 12 Indian languages", Icons.Outlined.TextFields, Category.OPTIMIZE, Input.PDF, "Run OCR", options = listOf(
+            Opt.Dropdown("lang", "Document language", { OcrLangs.choices }, "latin"),
             Opt.Choice("output", "Output", listOf("pdf" to "Searchable PDF", "txt" to "Text file", "both" to "Both"), "pdf"),
         )),
 

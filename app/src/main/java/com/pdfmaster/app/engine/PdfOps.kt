@@ -131,6 +131,9 @@ object PdfOps {
         return sb.toString()
     }
 
+    /** Ascent (in points) used when placing text by its top edge. Matches Roboto/Noto metrics. */
+    fun ascentFor(size: Float): Float = size * 0.93f
+
     fun ascent(font: PDFont): Float =
         (font.fontDescriptor?.ascent?.takeIf { it > 0 } ?: 800f) / 1000f
 
@@ -391,8 +394,13 @@ object PdfOps {
                                 cs.fill(item.color)
                                 val asc = ascent(font) * size
                                 item.text.split('\n').forEachIndexed { li, line ->
+                                    if (line.isBlank()) return@forEachIndexed
+                                    if (Fonts.needsShaping(line)) {
+                                        Fonts.drawShaped(doc, cs, line, item.x * w, h - item.y * h - li * size * 1.2f, size, item.color, false)
+                                        cs.fill(item.color)
+                                        return@forEachIndexed
+                                    }
                                     val s = safeText(font, line)
-                                    if (s.isEmpty()) return@forEachIndexed
                                     cs.beginText(); cs.setFont(font, size)
                                     cs.newLineAtOffset(item.x * w, h - item.y * h - asc - li * size * 1.2f)
                                     cs.showText(s); cs.endText()
@@ -401,8 +409,9 @@ object PdfOps {
                             is EditItem.Replace -> {
                                 val f = if (item.bold) boldFont else font
                                 val size = item.size * w
-                                val s = safeText(f, item.text.replace('\n', ' '))
-                                val textW = runCatching { f.getStringWidth(s) / 1000f * size }.getOrDefault(0f)
+                                val shaped = Fonts.needsShaping(item.text)
+                                val s = if (shaped) item.text.replace('\n', ' ') else safeText(f, item.text.replace('\n', ' '))
+                                val textW = if (shaped) Fonts.unitWidth(doc, s) * size * 1.05f else runCatching { f.getStringWidth(s) / 1000f * size }.getOrDefault(0f)
                                 val boxW = max((item.r - item.l) * w, textW + size * 0.2f)
                                 // Scanned text (or text we couldn't remove) is covered with the sampled background.
                                 if (item !in removed || textW > (item.r - item.l) * w * 1.02f) {
@@ -410,7 +419,9 @@ object PdfOps {
                                     cs.addRect(item.l * w - 0.5f, h - item.b * h - 0.5f, boxW + 1f, (item.b - item.t) * h + 1f)
                                     cs.fill()
                                 }
-                                if (s.isNotEmpty()) {
+                                if (s.isNotEmpty() && shaped) {
+                                    Fonts.drawShaped(doc, cs, s, item.l * w, h - item.t * h, size, item.color, item.bold)
+                                } else if (s.isNotEmpty()) {
                                     cs.fill(item.color)
                                     cs.beginText(); cs.setFont(f, size)
                                     cs.newLineAtOffset(item.l * w, h - item.t * h - ascent(f) * size)

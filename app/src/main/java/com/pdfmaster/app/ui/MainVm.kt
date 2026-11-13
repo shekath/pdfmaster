@@ -67,9 +67,18 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     var themeMode by mutableStateOf(prefs.getString("theme", "system") ?: "system"); private set
     fun setTheme(mode: String) { themeMode = mode; prefs.edit().putString("theme", mode).apply() }
 
+    /** Default OCR language code (see OcrLangs). */
+    var ocrLang by mutableStateOf(prefs.getString("ocrLang", null) ?: defaultOcrLang()); private set
+    fun updateOcrLang(code: String) { ocrLang = code; prefs.edit().putString("ocrLang", code).apply() }
+    private fun defaultOcrLang(): String {
+        val l = java.util.Locale.getDefault().language
+        return mapOf("hi" to "hin", "mr" to "mar", "ne" to "nep", "bn" to "ben", "as" to "asm", "gu" to "guj", "pa" to "pan", "or" to "ori", "ta" to "tam", "te" to "tel", "kn" to "kan", "ml" to "mal", "ur" to "urd")[l] ?: "latin"
+    }
+
     fun open(tool: Tool) {
         files.clear(); options.clear(); error = null
         tool.options.forEach { options[it.key] = it.defaultValue() }
+        if (options.containsKey("lang") && tool.id in setOf("ocr", "scan")) options["lang"] = ocrLang
         stack += Screen.Form(tool)
         val usable = carried.filter { accepts(tool.input, it) }
         if (usable.isNotEmpty()) {
@@ -188,6 +197,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             if (tool.id != "unlock" && files.any { it.locked }) { error = "\"${files.first { it.locked }.name}\" is password protected. Unlock it first."; return }
         }
         val opts = options.toMap()
+        if (tool.id == "ocr") opts["lang"]?.let { updateOcrLang(it) }
         launchJob(tool) { p -> ToolRunner.run(ctx, tool, inputs, opts, p) }
     }
 
@@ -209,12 +219,12 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             RunResult(listOf(out), "Saved ${refs.size} page(s) in the new order.")
         }
 
-    fun onScanned(uri: Uri, ocr: Boolean) =
+    fun onScanned(uri: Uri, ocr: Boolean, lang: String = ocrLang) =
         launchJob(Tools.byId("scan")) { p ->
             p(-1f, "Saving scan…")
             val scanned = Work.importUri(ctx, uri)
             val out = Work.outFile(ctx, "scan_" + java.text.SimpleDateFormat("yyyyMMdd_HHmm", java.util.Locale.US).format(java.util.Date()), "pdf")
-            if (ocr) Ocr.run(scanned, out, null) { f -> p(f, "Recognising text…") } else scanned.copyTo(out, true)
+            if (ocr) { updateOcrLang(lang); Ocr.run(scanned, out, null, lang, p) } else scanned.copyTo(out, true)
             RunResult(listOf(out), "Scanned ${PdfOps.pageCount(out)} page(s)${if (ocr) " with searchable text" else ""}.")
         }
 

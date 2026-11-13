@@ -2,10 +2,6 @@ package com.pdfmaster.app.engine
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -50,21 +46,17 @@ object TextEdit {
         return out
     }
 
-    /** Recognises text lines on a rendered page image. */
-    suspend fun ocrLines(page: Int, bmp: Bitmap): List<DetectedLine> {
-        val rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    /** Recognises text lines on a rendered page image with the OCR language [lang]. */
+    suspend fun ocrLines(page: Int, bmp: Bitmap, lang: String, status: (String) -> Unit = {}): List<DetectedLine> {
+        val session = OcrSession.open(AppCtx.app, lang, status)
         try {
-            val res = rec.process(InputImage.fromBitmap(bmp, 0)).await()
+            status("Reading the page (${OcrLangs.get(lang).name.substringBefore(" ·")})…")
             val w = bmp.width.toFloat(); val h = bmp.height.toFloat()
-            return res.textBlocks.flatMap { it.lines }.mapNotNull { line ->
-                val box = line.boundingBox ?: return@mapNotNull null
-                if (line.text.isBlank()) return@mapNotNull null
-                DetectedLine(
-                    page, box.left / w, box.top / h, box.right / w, box.bottom / h,
-                    line.text, box.height() / 1.2f / w, false, true,
-                )
+            return session.recognize(bmp).map { line ->
+                val box = line.box
+                DetectedLine(page, box.left / w, box.top / h, box.right / w, box.bottom / h, line.text, box.height() / 1.2f / w, false, true)
             }
-        } finally { rec.close() }
+        } finally { session.close() }
     }
 
     /** Estimates (background, text) colours inside a normalised box of a rendered page. */

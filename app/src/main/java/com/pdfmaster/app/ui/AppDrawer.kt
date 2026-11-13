@@ -22,6 +22,11 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.pdfmaster.app.engine.OcrLangs
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -106,6 +111,22 @@ fun AppDrawer(vm: MainVm, onPick: (Tool) -> Unit) {
                         ) { Text(label) }
                     }
                 }
+            }
+            item {
+                var pick by remember { mutableStateOf(false) }
+                SectionLabel("OCR language", Modifier.padding(start = 12.dp, top = 18.dp, bottom = 4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clip16().clickable { pick = true }.padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Icon(Icons.Outlined.Translate, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f).padding(start = 14.dp)) {
+                        Text(OcrLangs.get(vm.ocrLang).name, style = MaterialTheme.typography.bodyMedium)
+                        Text("Used by OCR, Scan and Edit text", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.Outlined.ExpandMore, null)
+                }
+                if (pick) OcrLanguageDialog(vm.ocrLang, onDismiss = { pick = false }) { vm.updateOcrLang(it); pick = false }
             }
             item { HorizontalDivider(Modifier.padding(vertical = 12.dp)) }
             item {

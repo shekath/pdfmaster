@@ -11,6 +11,8 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,3 +138,28 @@ object Files {
         ctx.contentResolver.openOutputStream(uri)?.use { out -> f.inputStream().use { it.copyTo(out) } }
     }
 }
+
+/** Picks the OCR language (English plus Indian languages). */
+@Composable
+fun OcrLanguageDialog(current: String, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Document language") },
+        text = {
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                items(com.pdfmaster.app.engine.OcrLangs.all.size) { i ->
+                    val l = com.pdfmaster.app.engine.OcrLangs.all[i]
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { onPick(l.code) }.padding(vertical = 4.dp)) {
+                        androidx.compose.material3.RadioButton(selected = l.code == current, onClick = { onPick(l.code) })
+                        Column(Modifier.padding(start = 8.dp)) {
+                            Text(l.name, style = MaterialTheme.typography.bodyMedium)
+                            if (l.engine == com.pdfmaster.app.engine.OcrLang.Engine.TESSERACT) Text("Downloads ~10 MB once", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+

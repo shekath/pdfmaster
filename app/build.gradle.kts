@@ -12,8 +12,8 @@ android {
         applicationId = "com.pdfmaster.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     signingConfigs {
@@ -91,6 +91,10 @@ dependencies {
 
     // On-device ML (no data leaves the phone except one-time model downloads for translation)
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    // Hindi / Marathi / Nepali / Sanskrit (Devanagari) OCR; model is delivered by Google Play services
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1")
+    // Tesseract for the other Indian scripts (Apache 2.0); language data downloads on first use
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:language-id:17.0.6")
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")

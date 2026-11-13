@@ -166,6 +166,47 @@ class EngineTest {
         assertTrue(!after.sameAs(bmp))
     }
 
+    @Test fun indicTextInPdf() {
+        val samples = mapOf(
+            "hin" to "भारत एक विशाल देश है",
+            "tam" to "தமிழ் ஒரு பழமையான மொழி",
+            "ben" to "আমার সোনার বাংলা",
+            "tel" to "తెలుగు భాష చాలా అందమైనది",
+        )
+        // 1) text layer: Indic strings written with script fonts must extract back exactly
+        val f = out("indic_layer.pdf")
+        PDDocument().use { doc ->
+            val page = PDPage(PDRectangle.A4); doc.addPage(page)
+            PDPageContentStream(doc, page).use { cs ->
+                var y = 760f
+                samples.values.forEach { t -> com.pdfmaster.app.engine.Fonts.show(cs, doc, "$t (OK 123)", 50f, y, 16f); y -= 40f }
+            }
+            doc.save(f)
+        }
+        val extracted = text(f)
+        samples.values.forEach { t -> t.split(" ").forEach { w -> assertTrue("missing $w in: $extracted", extracted.contains(w)) } }
+        assertTrue(extracted.contains("OK 123"))
+
+        // 2) editor: Hindi text item is drawn as shaped image + searchable invisible text
+        val a = samplePdf("a.pdf", 1)
+        val e = out("indic_edit.pdf")
+        PdfOps.applyEdits(a, e, listOf(EditItem.Text(0, 0.1f, 0.6f, samples["hin"]!!, 0.04f, Color.BLACK)))
+        assertTrue(text(e).contains("विशाल"))
+        PDDocument.load(e).use { d -> assertTrue(d.getPage(0).resources.xObjectNames.count() >= 1) }
+
+        // 3) images of shaped text for an OCR accuracy check with desktop Tesseract (same models as the app)
+        val shots = File(outDir, "ocr").apply { mkdirs() }
+        samples.forEach { (code, t) ->
+            val font = when (code) { "hin" -> "NotoSansDevanagari"; "tam" -> "NotoSansTamil"; "ben" -> "NotoSansBengali"; else -> "NotoSansTelugu" }
+            val tf = android.graphics.Typeface.createFromAsset(androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>().assets, "fonts/$font-Regular.ttf")
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { typeface = tf; textSize = 64f; color = Color.BLACK }
+            val bmp = Bitmap.createBitmap((paint.measureText(t) + 80).toInt(), 140, Bitmap.Config.ARGB_8888)
+            val c = android.graphics.Canvas(bmp); c.drawColor(Color.WHITE); c.drawText(t, 40f, 90f, paint)
+            File(shots, "$code.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            File(shots, "$code.txt").writeText(t)
+        }
+    }
+
     @Test fun findAndRedact() {
         val a = samplePdf("a.pdf", 2)
         val boxes = PdfOps.findText(a, "revenue")

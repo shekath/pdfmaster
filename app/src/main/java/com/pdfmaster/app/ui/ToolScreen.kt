@@ -95,7 +95,7 @@ fun ToolScreen(vm: MainVm, tool: Tool) {
     }
     val scanLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { r ->
         if (r.resultCode == Activity.RESULT_OK) {
-            GmsDocumentScanningResult.fromActivityResultIntent(r.data)?.pdf?.uri?.let { vm.onScanned(it, vm.options["ocr"] == "true") }
+            GmsDocumentScanningResult.fromActivityResultIntent(r.data)?.pdf?.uri?.let { vm.onScanned(it, vm.options["ocr"] == "true", vm.options["lang"] ?: vm.ocrLang) }
         }
     }
     val startScan = {
