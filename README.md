@@ -15,6 +15,12 @@ Download the APK for your phone from [`apk/`](apk/) and open it (allow "Install 
 
 Requires Android 8.0 or newer.
 
+## iPhone / iPad (web app)
+
+The same tools run as an installable web app in [`web/`](web/) — no App Store needed:
+open **https://shekath.github.io/pdfmaster/** in Safari → Share → **Add to Home Screen**.
+It works offline after the first visit. A self-hostable copy is in [`dist/`](dist/). See [web/README.md](web/README.md).
+
 ## Tools (31)
 
 | Category | Tools |
