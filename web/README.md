@@ -8,6 +8,9 @@ Tesseract.js). It installs to the iPhone home screen and works offline after the
 2. Tap **Share** → **Add to Home Screen** → **Add**.
 3. Open *PDF Master* from the home screen. It runs full-screen and keeps working offline.
 
+## Live copy
+https://shekathali.com/pdf/ (Hostinger, `public_html/pdf`). The `.htaccess` in this folder sets the right types for `.mjs`, `.wasm` and the manifest, which Apache needs.
+
 ## Host it yourself
 Any static HTTPS host works (GitHub Pages, Netlify, Cloudflare Pages, your own server): upload the contents of
 this folder. Service workers and "Add to Home Screen" need HTTPS (or `localhost`).

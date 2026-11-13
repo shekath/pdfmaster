@@ -1,0 +1,18 @@
+# PDF Master web app
+<IfModule mod_mime.c>
+  AddType application/javascript .mjs
+  AddType application/wasm .wasm
+  AddType application/manifest+json .webmanifest
+  AddType font/ttf .ttf
+</IfModule>
+<IfModule mod_headers.c>
+  # the service worker and app shell must always revalidate so updates arrive
+  <FilesMatch "^(sw\.js|index\.html|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "\.(wasm|ttf|png|svg|icc)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+DirectoryIndex index.html
+Options -Indexes
