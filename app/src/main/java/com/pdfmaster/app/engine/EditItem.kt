@@ -17,5 +17,11 @@ sealed class EditItem {
 
     data class Box(override val page: Int, val l: Float, val t: Float, val r: Float, val b: Float, val color: Int, val alpha: Float) : EditItem()
 
+    /**
+     * Replaces existing content: the original box is painted with [bg] and [text] is written in its place
+     * using the detected size, colour and weight. [size] is a fraction of the page width.
+     */
+    data class Replace(override val page: Int, val l: Float, val t: Float, val r: Float, val b: Float, val text: String, val size: Float, val color: Int, val bg: Int, val bold: Boolean, val ocr: Boolean = false) : EditItem()
+
     data class Picture(override val page: Int, val x: Float, val y: Float, val w: Float, val h: Float, val file: File) : EditItem()
 }

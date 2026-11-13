@@ -6,14 +6,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.pdfmaster.app.engine.Translator
 
-enum class Category(val title: String, val tint: Color) {
-    ORGANIZE("Organize", Color(0xFF4F6BED)),
-    OPTIMIZE("Optimize", Color(0xFF1E9E6A)),
-    TO_PDF("Convert to PDF", Color(0xFFE08A1E)),
-    FROM_PDF("Convert from PDF", Color(0xFF1A9BB0)),
-    EDIT("Edit", Color(0xFF8B5CF6)),
-    SECURITY("Security", Color(0xFFE0475B)),
-    SMART("Smart tools", Color(0xFF2E7CF6)),
+enum class Category(val title: String, val tint: Color, val icon: ImageVector) {
+    ORGANIZE("Organize", Color(0xFF4F6BED), Icons.Outlined.FolderOpen),
+    OPTIMIZE("Optimize", Color(0xFF1E9E6A), Icons.Outlined.Speed),
+    TO_PDF("Convert to PDF", Color(0xFFE08A1E), Icons.Outlined.PictureAsPdf),
+    FROM_PDF("Convert from PDF", Color(0xFF1A9BB0), Icons.Outlined.SwapHoriz),
+    EDIT("Edit", Color(0xFF8B5CF6), Icons.Outlined.Edit),
+    SECURITY("Security", Color(0xFFE0475B), Icons.Outlined.Security),
+    SMART("Smart tools", Color(0xFF2E7CF6), Icons.Outlined.AutoAwesome),
 }
 
 /** What a tool takes as input. */
@@ -151,7 +151,7 @@ object Tools {
             Opt.Text("pages", "Pages (leave empty for all)", pagesHint),
         )),
         Tool("crop", "Crop PDF", "Trim margins or select an area", Icons.Outlined.Crop, Category.EDIT, Input.PDF, "Open crop tool", Mode.EDITOR),
-        Tool("edit", "Edit PDF", "Add text, drawings, shapes and images", Icons.Outlined.EditNote, Category.EDIT, Input.PDF, "Open editor", Mode.EDITOR),
+        Tool("edit", "Edit PDF", "Edit existing text (OCR for scans), add text, drawings and images", Icons.Outlined.EditNote, Category.EDIT, Input.PDF, "Open editor", Mode.EDITOR),
 
         // Security
         Tool("sign", "Sign PDF", "Draw or type your signature and place it", Icons.Outlined.Draw, Category.SECURITY, Input.PDF, "Open signer", Mode.EDITOR),

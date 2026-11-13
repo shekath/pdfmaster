@@ -22,6 +22,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Shield
@@ -57,6 +65,10 @@ fun HomeScreen(vm: MainVm) {
             (q.isEmpty() || t.title.lowercase().contains(q) || t.subtitle.lowercase().contains(q) || t.category.title.lowercase().contains(q))
     }
 
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val dark = isDark(vm.themeMode)
+    ModalNavigationDrawer(drawerState = drawer, drawerContent = { AppDrawer(vm) { t -> scope.launch { drawer.close() }; vm.open(t) } }) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { pad ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(158.dp),
@@ -66,8 +78,14 @@ fun HomeScreen(vm: MainVm) {
             modifier = Modifier.fillMaxSize().statusBarsPadding()
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(Modifier.padding(top = 12.dp, bottom = 4.dp)) {
-                    Text("PDF Master", style = MaterialTheme.typography.headlineMedium)
+                Column(Modifier.padding(top = 4.dp, bottom = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { scope.launch { drawer.open() } }, modifier = Modifier.padding(end = 4.dp)) { Icon(Icons.Outlined.Menu, "Menu") }
+                        Text("PDF Master", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { vm.setTheme(if (dark) "light" else "dark") }) {
+                            Icon(if (dark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, if (dark) "Switch to light theme" else "Switch to dark theme")
+                        }
+                    }
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Shield, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -118,6 +136,7 @@ fun HomeScreen(vm: MainVm) {
             } else items(visible, key = { it.id }) { ToolCard(it) { vm.open(it) } }
         }
     }
+}
 }
 
 @Composable

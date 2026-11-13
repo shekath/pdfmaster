@@ -39,6 +39,8 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CropSquare
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Draw
+import androidx.compose.material.icons.outlined.DocumentScanner
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.Search
@@ -62,6 +64,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -95,7 +98,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.pdfmaster.app.engine.DetectedLine
 import com.pdfmaster.app.engine.EditItem
+import com.pdfmaster.app.engine.TextEdit
 import com.pdfmaster.app.engine.Render
 import com.pdfmaster.app.engine.Work
 import com.pdfmaster.app.tools.Tool
@@ -109,7 +114,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-private enum class EMode(val label: String) { MOVE("Move"), TEXT("Text"), DRAW("Draw"), HIGHLIGHT("Highlight"), WHITEOUT("White-out"), BOX("Box"), IMAGE("Image"), SIGN("Signature"), REDACT("Redact"), CROP("Crop") }
+private enum class EMode(val label: String) { EDIT_TEXT("Edit text"), MOVE("Move"), TEXT("Text"), DRAW("Draw"), HIGHLIGHT("Highlight"), WHITEOUT("White-out"), BOX("Box"), IMAGE("Image"), SIGN("Signature"), REDACT("Redact"), CROP("Crop") }
 
 private val palette = listOf(0xFF111111.toInt(), 0xFF1E4FD8.toInt(), 0xFFD32F2F.toInt(), 0xFF1E9E6A.toInt(), 0xFFF5B400.toInt(), 0xFFFFFFFF.toInt())
 
@@ -127,7 +132,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
         "sign" -> listOf(EMode.SIGN, EMode.TEXT, EMode.MOVE)
         "redact" -> listOf(EMode.REDACT)
         "crop" -> listOf(EMode.CROP)
-        else -> listOf(EMode.TEXT, EMode.DRAW, EMode.HIGHLIGHT, EMode.WHITEOUT, EMode.BOX, EMode.IMAGE, EMode.MOVE)
+        else -> listOf(EMode.EDIT_TEXT, EMode.TEXT, EMode.DRAW, EMode.HIGHLIGHT, EMode.WHITEOUT, EMode.BOX, EMode.IMAGE, EMode.MOVE)
     }
     var page by remember { mutableIntStateOf(0) }
     val items = remember { mutableStateListOf<EditItem>() }
@@ -144,11 +149,58 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
     var pendingImage by remember { mutableStateOf<File?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
     val bitmaps = remember { mutableStateMapOf<File, ImageBitmap>() }
+    // ---- editable existing text (text layer or OCR) ----
+    val detected = remember { mutableStateMapOf<Int, List<DetectedLine>>() }
+    var pdfLines by remember { mutableStateOf<Map<Int, List<DetectedLine>>?>(null) }
+    var detecting by remember { mutableStateOf(false) }
+    var replaceTarget by remember { mutableStateOf<Pair<DetectedLine, Int?>?>(null) }
+    var forceOcr by remember { mutableIntStateOf(0) }
     fun bmpFor(f: File): ImageBitmap? = bitmaps[f] ?: BitmapFactory.decodeFile(f.path)?.asImageBitmap()?.also { bitmaps[f] = it }
 
     val pageBmp by produceState<Bitmap?>(null, page) { value = null; value = withContext(Dispatchers.IO) { runCatching { doc.render(page, 1400) }.getOrNull() } }
     val pageSize = remember(page) { doc.pageSize(page) }
     val aspect = pageSize.height / pageSize.width
+
+    LaunchedEffect(mode, page, forceOcr) {
+        if (mode != EMode.EDIT_TEXT) return@LaunchedEffect
+        val wantOcr = forceOcr > 0 && detected[page]?.firstOrNull()?.fromOcr != true
+        if (detected.containsKey(page) && !wantOcr) return@LaunchedEffect
+        detecting = true
+        try {
+            val layer = pdfLines ?: withContext(Dispatchers.IO) { runCatching { TextEdit.pdfLines(file) }.getOrDefault(emptyMap()) }.also { pdfLines = it }
+            val fromLayer = layer[page].orEmpty()
+            if (fromLayer.isNotEmpty() && !wantOcr) {
+                detected[page] = fromLayer
+                info = "Tap any line to edit it"
+            } else {
+                info = "Reading the page with OCR…"
+                val lines = withContext(Dispatchers.Default) {
+                    runCatching {
+                        val size = doc.pageSize(page)
+                        val bmp = withContext(Dispatchers.IO) { doc.render(page, (size.width * 3f).toInt().coerceIn(1400, 2600)) }
+                        TextEdit.ocrLines(page, bmp)
+                    }.getOrElse { emptyList() }
+                }
+                detected[page] = lines
+                info = if (lines.isEmpty()) "No text found on this page" else "Found ${lines.size} lines with OCR. Tap one to edit it"
+            }
+        } finally { detecting = false; forceOcr = 0 }
+    }
+
+    fun openReplace(nx: Float, ny: Float): Boolean {
+        // re-edit an existing replacement first
+        val existing = items.indexOfLast { it is EditItem.Replace && it.page == page && nx in it.l..maxOf(it.r, it.l + 0.02f) && ny in it.t..it.b }
+        if (existing >= 0) {
+            val it = items[existing] as EditItem.Replace
+            replaceTarget = DetectedLine(page, it.l, it.t, it.r, it.b, it.text, it.size, it.bold, it.ocr) to existing
+            return true
+        }
+        val pad = 0.006f
+        val line = detected[page].orEmpty().filter { nx in (it.l - pad)..(it.r + pad) && ny in (it.t - pad)..(it.b + pad) }
+            .minByOrNull { (it.b - it.t) * (it.r - it.l) } ?: return false
+        replaceTarget = line to null
+        return true
+    }
 
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) scope.launch {
@@ -187,6 +239,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                         val sel = selected?.let { items.getOrNull(it) }
                         if (sel != null) IconButton(onClick = { items.removeAt(selected!!); selected = null }) { Icon(Icons.Outlined.Delete, "Delete selected") }
                         if (tool.id == "crop") { Text("All pages", style = MaterialTheme.typography.bodySmall); Switch(checked = cropAll, onCheckedChange = { cropAll = it }, modifier = Modifier.padding(start = 6.dp)) }
+                        if (mode == EMode.EDIT_TEXT) TextButton(onClick = { forceOcr++ }, enabled = !detecting) { Icon(Icons.Outlined.DocumentScanner, null, Modifier.size(18.dp)); HSpace(6.dp); Text(if (detecting) "Reading…" else "OCR page") }
                         if (tool.id == "redact") TextButton(onClick = { searchDialog = true }) { Icon(Icons.Outlined.Search, null, Modifier.size(18.dp)); HSpace(6.dp); Text("Find text") }
                     }
                     if (modes.size > 1) Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -207,7 +260,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                             }, label = { Text("Date") }, leadingIcon = { Icon(Icons.Outlined.Event, null, Modifier.size(18.dp)) })
                         }
                     }
-                    if (mode in setOf(EMode.TEXT, EMode.DRAW, EMode.BOX, EMode.SIGN, EMode.MOVE) && tool.id != "redact") {
+                    if (mode in setOf(EMode.TEXT, EMode.DRAW, EMode.BOX, EMode.SIGN, EMode.MOVE) && tool.id != "redact" || (mode == EMode.EDIT_TEXT && selected?.let { items.getOrNull(it) } is EditItem.Replace)) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                             palette.forEach { c ->
                                 Box(Modifier.padding(end = 8.dp).size(26.dp).background(Color(c), CircleShape)
@@ -247,6 +300,10 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                         .pointerInput(mode, page, signature, pendingImage) {
                             detectTapGestures { off ->
                                 val nx = off.x / size.width; val ny = off.y / size.height
+                                if (mode == EMode.EDIT_TEXT) {
+                                    if (!openReplace(nx, ny)) info = if (detecting) "Still reading the page…" else "No text there. Tap a highlighted line"
+                                    return@detectTapGestures
+                                }
                                 val hit = hitTest(items, page, nx, ny, aspect)
                                 if (hit != null && mode != EMode.REDACT && mode != EMode.CROP) { selected = hit; return@detectTapGestures }
                                 selected = null
@@ -300,6 +357,14 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
                         }
                 ) {
                     items.forEachIndexed { i, item -> if (item.page == page) drawItem(item, i == selected, ::bmpFor) }
+                    if (mode == EMode.EDIT_TEXT) {
+                        val done = items.filterIsInstance<EditItem.Replace>().filter { it.page == page }
+                        detected[page].orEmpty().forEach { d ->
+                            if (done.any { abs(it.l - d.l) < 0.002f && abs(it.t - d.t) < 0.002f }) return@forEach
+                            drawRect(Color(0x142F5BEA), Offset(d.l * size.width, d.t * size.height), Size((d.r - d.l) * size.width, (d.b - d.t) * size.height))
+                            drawRect(Color(0x992F5BEA), Offset(d.l * size.width, d.t * size.height), Size((d.r - d.l) * size.width, (d.b - d.t) * size.height), style = Stroke(1.2f))
+                        }
+                    }
                     val s = dragStart; val e = dragNow
                     if (mode == EMode.DRAW && ink.size > 1) {
                         val p = Path().apply { moveTo(ink[0].first * size.width, ink[0].second * size.height); ink.drop(1).forEach { lineTo(it.first * size.width, it.second * size.height) } }
@@ -338,6 +403,40 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
             dismissButton = { TextButton(onClick = { textDialog = null }) { Text("Cancel") } },
         )
     }
+    replaceTarget?.let { (line, index) ->
+        var text by remember(line) { mutableStateOf(line.text) }
+        var bold by remember(line) { mutableStateOf(line.bold) }
+        AlertDialog(
+            onDismissRequest = { replaceTarget = null },
+            title = { Text("Edit text") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(text, { text = it }, minLines = 2, modifier = Modifier.fillMaxWidth())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Bold", modifier = Modifier.weight(1f)); Switch(checked = bold, onCheckedChange = { bold = it })
+                    }
+                    if (line.fromOcr) Text("Recognised with OCR: check the spelling before saving.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val bmp = pageBmp
+                    val prev = index?.let { items.getOrNull(it) as? EditItem.Replace }
+                    val (bg, fg) = prev?.let { it.bg to it.color } ?: (bmp?.let { TextEdit.sampleColors(it, line.l, line.t, line.r, line.b) } ?: (0xFFFFFFFF.toInt() to 0xFF000000.toInt()))
+                    val item = EditItem.Replace(page, line.l, line.t, line.r, line.b, text.replace('\n', ' '), prev?.size ?: line.size, fg, bg, bold, line.fromOcr || prev?.ocr == true)
+                    if (index != null) items[index] = item else items += item
+                    selected = if (index != null) index else items.lastIndex
+                    replaceTarget = null
+                }) { Text("Apply") }
+            },
+            dismissButton = {
+                Row {
+                    if (index != null) TextButton(onClick = { items.removeAt(index); selected = null; replaceTarget = null }) { Text("Restore original") }
+                    TextButton(onClick = { replaceTarget = null }) { Text("Cancel") }
+                }
+            },
+        )
+    }
     if (signDialog) SignatureDialog(color, onDismiss = { signDialog = false }) { bmp ->
         val f = Work.tmpFile(ctx, "png")
         f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -369,7 +468,7 @@ fun EditorScreen(vm: MainVm, tool: Tool, file: File) {
 }
 
 private fun iconFor(m: EMode) = when (m) {
-    EMode.MOVE -> Icons.Outlined.PanTool; EMode.TEXT -> Icons.Outlined.TextFields; EMode.DRAW -> Icons.Outlined.Brush
+    EMode.EDIT_TEXT -> Icons.Outlined.EditNote; EMode.MOVE -> Icons.Outlined.PanTool; EMode.TEXT -> Icons.Outlined.TextFields; EMode.DRAW -> Icons.Outlined.Brush
     EMode.HIGHLIGHT -> Icons.Outlined.Highlight; EMode.WHITEOUT -> Icons.Outlined.CropSquare; EMode.BOX -> Icons.Outlined.CropSquare
     EMode.IMAGE -> Icons.Outlined.AddPhotoAlternate; EMode.SIGN -> Icons.Outlined.Draw; EMode.REDACT -> Icons.Outlined.CropSquare; EMode.CROP -> Icons.Outlined.Crop
 }
@@ -404,12 +503,14 @@ private fun moveBy(it: EditItem, dx: Float, dy: Float): EditItem = when (it) {
 
 private fun recolor(it: EditItem, c: Int): EditItem? = when (it) {
     is EditItem.Text -> it.copy(color = c)
+    is EditItem.Replace -> it.copy(color = c)
     is EditItem.Ink -> it.copy(color = c)
     else -> null
 }
 
 private fun resize(it: EditItem, v: Float, aspect: Float): EditItem? = when (it) {
     is EditItem.Text -> it.copy(size = v)
+    is EditItem.Replace -> it.copy(size = v)
     is EditItem.Picture -> { val nw = (v * 8f).coerceIn(0.05f, 1f); val nh = it.h * nw / it.w; it.copy(w = nw, h = nh) }
     else -> null
 }
@@ -417,6 +518,14 @@ private fun resize(it: EditItem, v: Float, aspect: Float): EditItem? = when (it)
 private fun DrawScope.drawItem(item: EditItem, selected: Boolean, bmp: (File) -> ImageBitmap?) {
     val W = size.width; val H = size.height
     when (item) {
+        is EditItem.Replace -> {
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = item.color; textSize = item.size * W; typeface = if (item.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
+            val tw = paint.measureText(item.text)
+            val bw = maxOf((item.r - item.l) * W, tw + item.size * W * 0.2f)
+            drawRect(Color(item.bg), Offset(item.l * W - 1, item.t * H - 1), Size(bw + 2, (item.b - item.t) * H + 2))
+            drawContext.canvas.nativeCanvas.drawText(item.text, item.l * W, item.t * H - paint.fontMetrics.ascent, paint)
+            if (selected) drawRect(Color(0xFF2F5BEA), Offset(item.l * W - 3, item.t * H - 3), Size(bw + 6, (item.b - item.t) * H + 6), style = Stroke(2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))))
+        }
         is EditItem.Box -> drawRect(Color(item.color).copy(alpha = item.alpha), Offset(item.l * W, item.t * H), Size((item.r - item.l) * W, (item.b - item.t) * H))
         is EditItem.Ink -> {
             val p = Path().apply { moveTo(item.points[0].first * W, item.points[0].second * H); item.points.drop(1).forEach { lineTo(it.first * W, it.second * H) } }

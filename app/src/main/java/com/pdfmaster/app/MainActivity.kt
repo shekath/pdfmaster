@@ -5,6 +5,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.compose.runtime.LaunchedEffect
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import com.pdfmaster.app.ui.isDark
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -19,7 +24,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) handleIntent(intent)
-        setContent { PdfMasterTheme { App(vm) } }
+        setContent {
+            val dark = isDark(vm.themeMode)
+            LaunchedEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                window.setBackgroundDrawable(ColorDrawable(if (dark) 0xFF101217.toInt() else 0xFFF6F7FA.toInt()))
+            }
+            PdfMasterTheme(vm.themeMode) { App(vm) }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

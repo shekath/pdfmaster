@@ -108,15 +108,16 @@ object PdfOps {
     )
 
     /** A Unicode-capable embedded font when the system provides one, else Helvetica. */
-    fun loadFont(doc: PDDocument): PDFont {
-        for (path in fontFiles) {
+    fun loadFont(doc: PDDocument, bold: Boolean = false): PDFont {
+        val paths = if (bold) listOf("/system/fonts/Roboto-Bold.ttf", "/system/fonts/RobotoStatic-Bold.ttf", "/system/fonts/NotoSans-Bold.ttf", "/system/fonts/DroidSans-Bold.ttf") + fontFiles else fontFiles
+        for (path in paths) {
             val f = File(path)
             if (f.exists()) {
                 val font = runCatching { PDType0Font.load(doc, f) }.getOrNull()
                 if (font != null) return font
             }
         }
-        return PDType1Font.HELVETICA
+        return if (bold) PDType1Font.HELVETICA_BOLD else PDType1Font.HELVETICA
     }
 
     /** Replaces characters the font can't encode with '?'. */
@@ -354,10 +355,16 @@ object PdfOps {
     fun applyEdits(input: File, out: File, items: List<EditItem>) {
         open(input).use { doc ->
             val font by lazy { loadFont(doc) }
+            val boldFont by lazy { loadFont(doc, bold = true) }
             val images = HashMap<File, PDImageXObject>()
             items.groupBy { it.page }.forEach { (pi, list) ->
                 if (pi !in 0 until doc.numberOfPages) return@forEach
                 val page = doc.getPage(pi)
+                // Edited lines that come from the real text layer: delete the original glyphs first.
+                val textLayerEdits = list.filterIsInstance<EditItem.Replace>().filter { !it.ocr }
+                val removed = runCatching {
+                    TextRemover.remove(doc, pi, textLayerEdits.map { TextRemover.Area(it.l, it.t, it.r, it.b) }).map { textLayerEdits[it] }.toSet()
+                }.getOrDefault(emptySet())
                 drawVisual(doc, page) { cs, w, h ->
                     for (item in list) {
                         cs.saveGraphicsState()
@@ -388,6 +395,25 @@ object PdfOps {
                                     if (s.isEmpty()) return@forEachIndexed
                                     cs.beginText(); cs.setFont(font, size)
                                     cs.newLineAtOffset(item.x * w, h - item.y * h - asc - li * size * 1.2f)
+                                    cs.showText(s); cs.endText()
+                                }
+                            }
+                            is EditItem.Replace -> {
+                                val f = if (item.bold) boldFont else font
+                                val size = item.size * w
+                                val s = safeText(f, item.text.replace('\n', ' '))
+                                val textW = runCatching { f.getStringWidth(s) / 1000f * size }.getOrDefault(0f)
+                                val boxW = max((item.r - item.l) * w, textW + size * 0.2f)
+                                // Scanned text (or text we couldn't remove) is covered with the sampled background.
+                                if (item !in removed || textW > (item.r - item.l) * w * 1.02f) {
+                                    cs.fill(item.bg)
+                                    cs.addRect(item.l * w - 0.5f, h - item.b * h - 0.5f, boxW + 1f, (item.b - item.t) * h + 1f)
+                                    cs.fill()
+                                }
+                                if (s.isNotEmpty()) {
+                                    cs.fill(item.color)
+                                    cs.beginText(); cs.setFont(f, size)
+                                    cs.newLineAtOffset(item.l * w, h - item.t * h - ascent(f) * size)
                                     cs.showText(s); cs.endText()
                                 }
                             }

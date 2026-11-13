@@ -61,6 +61,12 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     private var job: Job? = null
 
+    private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+
+    /** "system", "light" or "dark". */
+    var themeMode by mutableStateOf(prefs.getString("theme", "system") ?: "system"); private set
+    fun setTheme(mode: String) { themeMode = mode; prefs.edit().putString("theme", mode).apply() }
+
     fun open(tool: Tool) {
         files.clear(); options.clear(); error = null
         tool.options.forEach { options[it.key] = it.defaultValue() }

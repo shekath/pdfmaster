@@ -47,7 +47,11 @@ private val Type = Typography().let { t ->
     )
 }
 
+/** [mode] is "system", "light" or "dark". */
 @Composable
-fun PdfMasterTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, typography = Type, content = content)
+fun isDark(mode: String): Boolean = when (mode) { "light" -> false; "dark" -> true; else -> isSystemInDarkTheme() }
+
+@Composable
+fun PdfMasterTheme(mode: String = "system", content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = if (isDark(mode)) Dark else Light, typography = Type, content = content)
 }

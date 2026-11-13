@@ -186,7 +186,7 @@ fun ToolScreen(vm: MainVm, tool: Tool) {
 }
 
 private fun editorHint(id: String) = when (id) {
-    "edit" -> "Add text, freehand drawings, highlights, white-out boxes and images on any page."
+    "edit" -> "Tap \"Edit text\" to change the words already on a page. Scanned pages are read with OCR automatically. You can also add text, drawings, highlights, white-out and images."
     "sign" -> "Draw or type your signature, then tap the page to place it. Drag to move it."
     "redact" -> "Drag over anything you want to hide, or search for words. Redacted pages are flattened so the hidden content is really gone."
     "crop" -> "Drag a box around the area to keep. Apply it to one page or all pages."

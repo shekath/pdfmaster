@@ -144,6 +144,28 @@ class EngineTest {
         PDDocument.load(c).use { val b = it.getPage(0).cropBox; assertEquals(595f * 0.8f, b.width, 1f); assertEquals(842f * 0.4f, b.height, 1f) }
     }
 
+    @Test fun editExistingText() {
+        val a = samplePdf("a.pdf", 1)
+        val lines = com.pdfmaster.app.engine.TextEdit.pdfLines(a)[0]!!
+        val target = lines.first { it.text.startsWith("Revenue") }
+        assertTrue(target.l < target.r && target.t < target.b && target.size > 0.01f && target.size < 0.03f)
+        // colours sampled from a rendered page: white background, dark text
+        val bmp = Render.Doc(a).use { it.render(0, 1200) }
+        val (bg, fg) = com.pdfmaster.app.engine.TextEdit.sampleColors(bmp, target.l, target.t, target.r, target.b)
+        assertTrue("bg should be light", Color.red(bg) > 200)
+        assertTrue("text should be dark", Color.red(fg) < 120)
+        val e = out("text_edited.pdf")
+        PdfOps.applyEdits(a, e, listOf(EditItem.Replace(0, target.l, target.t, target.r, target.b, "Profit doubled this quarter.", target.size, fg, bg, false)))
+        val t = text(e)
+        assertTrue(t.contains("Profit doubled this quarter."))
+        // the replacement sits where the original line was
+        val newLine = com.pdfmaster.app.engine.TextEdit.pdfLines(e)[0]!!.first { it.text.contains("Profit") }
+        assertEquals(target.l, newLine.l, 0.01f); assertEquals(target.t, newLine.t, 0.015f)
+        // the edit is visible: pixels under the old line are now the new text, rendered output differs
+        val after = Render.Doc(e).use { it.render(0, 1200) }
+        assertTrue(!after.sameAs(bmp))
+    }
+
     @Test fun findAndRedact() {
         val a = samplePdf("a.pdf", 2)
         val boxes = PdfOps.findText(a, "revenue")
