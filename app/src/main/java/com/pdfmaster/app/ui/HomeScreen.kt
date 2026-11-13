@@ -1,7 +1,10 @@
 package com.pdfmaster.app.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.pdfmaster.app.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -81,7 +84,8 @@ fun HomeScreen(vm: MainVm) {
                 Column(Modifier.padding(top = 4.dp, bottom = 4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { scope.launch { drawer.open() } }, modifier = Modifier.padding(end = 4.dp)) { Icon(Icons.Outlined.Menu, "Menu") }
-                        Text("PDF Master", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                        Image(painterResource(R.drawable.app_logo), contentDescription = null, modifier = Modifier.size(34.dp))
+                        Text("PDF Master", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f).padding(start = 10.dp))
                         IconButton(onClick = { vm.setTheme(if (dark) "light" else "dark") }) {
                             Icon(if (dark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, if (dark) "Switch to light theme" else "Switch to dark theme")
                         }

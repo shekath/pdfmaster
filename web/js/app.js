@@ -67,7 +67,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.c
 function renderDrawer() {
   const mode = store.get('theme', 'system');
   drawer.replaceChildren(
-    h('div', { style: { padding: '0 12px 12px' } }, h('h2', {}, 'PDF Master'), h('div', { class: 'small muted' }, `${TOOLS.length} tools in ${CATEGORIES.length} groups`)),
+    h('div', { style: { padding: '0 12px 12px' } }, h('img', { src: 'icons/logo.svg', alt: '', width: 48, height: 48, style: { display: 'block', marginBottom: '8px' } }), h('h2', {}, 'PDF Master'), h('div', { class: 'small muted' }, `${TOOLS.length} tools in ${CATEGORIES.length} groups`)),
     h('div', { class: 'label', style: { margin: '6px 12px 8px' } }, 'Tools'),
     ...CATEGORIES.map((c) => {
       const tools = TOOLS.filter((t) => t.cat === c.id); const open = openCats.has(c.id);
@@ -112,7 +112,7 @@ function renderHome() {
   const search = h('input', { placeholder: 'Search tools', value: S.query, 'aria-label': 'Search tools', oninput: (e) => { S.query = e.target.value; renderHome(); const i = app.querySelector('.search input'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } });
   app.replaceChildren(h('div', { class: 'wrap' },
     h('div', { class: 'row', style: { marginTop: '4px' } },
-      iconBtn('menu', 'Menu', openDrawer), h('h1', { class: 'grow' }, 'PDF Master'),
+      iconBtn('menu', 'Menu', openDrawer), h('img', { src: 'icons/logo.svg', alt: '', width: 34, height: 34, style: { flex: 'none' } }), h('h1', { class: 'grow' }, 'PDF Master'),
       iconBtn(isDark() ? 'sun' : 'moon', isDark() ? 'Switch to light theme' : 'Switch to dark theme', () => { applyTheme(isDark() ? 'light' : 'dark'); render(); })),
     h('div', { class: 'row small muted', style: { margin: '2px 0 0 54px' } }, icon('shield', 14), 'Every PDF tool. Files stay on your device.'),
     !standalone() && isIOS && h('div', { class: 'install' }, icon('share'), h('div', {}, h('b', {}, 'Install on iPhone: '), 'tap the Share button, then “Add to Home Screen”.')),

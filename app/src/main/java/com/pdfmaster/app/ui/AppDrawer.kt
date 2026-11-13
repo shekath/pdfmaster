@@ -1,6 +1,9 @@
 package com.pdfmaster.app.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.pdfmaster.app.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,6 +61,7 @@ fun AppDrawer(vm: MainVm, onPick: (Tool) -> Unit) {
         LazyColumn(Modifier.padding(horizontal = 12.dp).testTag("drawer")) {
             item {
                 Column(Modifier.padding(start = 12.dp, top = 20.dp, bottom = 12.dp)) {
+                    Image(painterResource(R.drawable.app_logo), contentDescription = null, modifier = Modifier.size(48.dp).padding(bottom = 8.dp))
                     Text("PDF Master", style = MaterialTheme.typography.titleLarge)
                     Text("${Tools.all.size} tools in ${Category.entries.size} groups", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

@@ -1,5 +1,7 @@
 # PDF Master
 
+<img src="docs/app-icon.svg" width="96" alt="PDF Master icon">
+
 A minimal Android app with a full set of PDF tools. Everything runs **on the device**: files are never uploaded.
 
 <img src="docs/screens/01_home.png" width="200"> <img src="docs/screens/06_home_dark.png" width="200"> <img src="docs/screens/03_menu_light.png" width="200"> <img src="docs/screens/04_menu_dark.png" width="200">
@@ -10,8 +12,8 @@ Download the APK for your phone from [`apk/`](apk/) and open it (allow "Install 
 
 | File | For |
 |---|---|
-| `PDFMaster-1.2.0-arm64-v8a.apk` | Almost every phone from 2017 onwards |
-| `PDFMaster-1.2.0-armeabi-v7a.apk` | Older 32-bit phones |
+| `PDFMaster-1.3.0-arm64-v8a.apk` | Almost every phone from 2017 onwards |
+| `PDFMaster-1.3.0-armeabi-v7a.apk` | Older 32-bit phones |
 
 Requires Android 8.0 or newer.
 
