@@ -12,8 +12,8 @@ Download the APK for your phone from [`apk/`](apk/) and open it (allow "Install 
 
 | File | For |
 |---|---|
-| `PDFMaster-1.3.0-arm64-v8a.apk` | Almost every phone from 2017 onwards |
-| `PDFMaster-1.3.0-armeabi-v7a.apk` | Older 32-bit phones |
+| `PDFMaster-1.3.0-arm64-v8a.apk` ([direct download](https://shekathali.com/pdf/android/PDFMaster-1.3.0-arm64-v8a.apk)) | Almost every phone from 2017 onwards |
+| `PDFMaster-1.3.0-armeabi-v7a.apk` ([direct download](https://shekathali.com/pdf/android/PDFMaster-1.3.0-armeabi-v7a.apk)) | Older 32-bit phones |
 
 Requires Android 8.0 or newer.
 

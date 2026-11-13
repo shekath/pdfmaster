@@ -4,6 +4,7 @@
   AddType application/wasm .wasm
   AddType application/manifest+json .webmanifest
   AddType font/ttf .ttf
+  AddType application/vnd.android.package-archive .apk
 </IfModule>
 <IfModule mod_headers.c>
   # the service worker and app shell must always revalidate so updates arrive
