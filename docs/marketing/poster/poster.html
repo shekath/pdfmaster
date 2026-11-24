@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PDF Master Poster</title>
+<style>
+@font-face { font-family: "Nunito"; font-weight: 600; src: url(fonts/nunito-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 700; src: url(fonts/nunito-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 800; src: url(fonts/nunito-latin-800-normal.woff2) format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 900; src: url(fonts/nunito-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Noto Indic"; src: url(fonts/NotoSansDevanagari-Regular.ttf); unicode-range: U+0900-097F; }
+@font-face { font-family: "Noto Indic"; src: url(fonts/NotoSansBengali-Regular.ttf); unicode-range: U+0980-09FF; }
+@font-face { font-family: "Noto Indic"; src: url(fonts/NotoSansTamil-Regular.ttf); unicode-range: U+0B80-0BFF; }
+
+/* Poster 1080×1920 (9:16). Brand tokens come straight from the app icon. */
+:root {
+  --ink: #0E0B3D; --indigo: #2B3BFF; --violet: #8A3FF2; --coral: #FF4F6A; --peach: #FFB08A; --gold: #FFC93C; --butter: #FFE680;
+  --white: #FFFFFF; --mist: rgba(255,255,255,.72); --glass: rgba(255,255,255,.12); --glass-line: rgba(255,255,255,.22);
+  --font: "Nunito", "Noto Indic", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+body { font-family: var(--font); color: var(--white); position: relative; }
+
+.bg { position: absolute; inset: 0; background:
+  radial-gradient(900px 700px at 85% 8%, rgba(138,63,242,.75), transparent 60%),
+  radial-gradient(800px 800px at 0% 45%, rgba(43,59,255,.85), transparent 62%),
+  linear-gradient(170deg, #1D1A8F 0%, #2B3BFF 38%, #5B2FD6 70%, #2A1260 100%); }
+.grain { position: absolute; inset: 0; opacity: .08; background-image: radial-gradient(rgba(255,255,255,.9) 1px, transparent 1px); background-size: 6px 6px; }
+
+/* The icon's peeling corner, at poster scale */
+.peel-under { position: absolute; right: 0; bottom: 0; width: 330px; height: 330px; background: linear-gradient(135deg, var(--gold), var(--butter)); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.peel-flap { position: absolute; right: 0; bottom: 0; width: 330px; height: 330px; filter: drop-shadow(-18px -18px 26px rgba(14,11,61,.45)); }
+.peel-flap svg { width: 100%; height: 100%; display: block; }
+
+header { position: absolute; top: 96px; left: 0; right: 0; display: grid; justify-items: center; gap: 22px; text-align: center; }
+.logo { width: 150px; height: 150px; filter: drop-shadow(0 18px 40px rgba(10,6,60,.5)); }
+h1 { font-weight: 900; font-size: 112px; line-height: .95; letter-spacing: -2px; }
+.tag { font-weight: 700; font-size: 38px; color: var(--mist); letter-spacing: .2px; }
+.tag b { color: var(--white); font-weight: 800; }
+
+.stage { position: absolute; top: 520px; left: 0; right: 0; height: 880px; }
+.phone { position: absolute; width: 380px; height: 800px; border-radius: 58px; padding: 14px; background: #0B0A1F; box-shadow: 0 40px 90px rgba(6,4,40,.55), inset 0 0 0 2px rgba(255,255,255,.12); }
+.phone .screen { width: 100%; height: 100%; border-radius: 46px; overflow: hidden; background: #fff; position: relative; }
+.phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.phone .island { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #0B0A1F; z-index: 2; }
+.phone.back { left: 140px; top: 70px; transform: rotate(-9deg); opacity: .96; }
+.phone.front { left: 470px; top: 20px; transform: rotate(5deg); }
+
+.chip { position: absolute; display: flex; align-items: center; gap: 14px; padding: 16px 24px 16px 18px; border-radius: 26px; background: rgba(255,255,255,.95); color: var(--ink); font-weight: 800; font-size: 27px; box-shadow: 0 18px 40px rgba(10,6,60,.35); white-space: nowrap; }
+.chip i { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-style: normal; flex: none; }
+.chip i svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.chip small { display: block; font-weight: 700; font-size: 20px; color: #5A5880; margin-top: 1px; }
+.c1 { left: 40px; top: 20px; } .c1 i { background: #E7E9FF; color: var(--indigo); }
+.c2 { right: 36px; top: 300px; } .c2 i { background: #FFE6EA; color: var(--coral); }
+.c3 { left: 56px; top: 560px; } .c3 i { background: #FFF3CF; color: #B07800; }
+.c4 { right: 70px; top: 690px; } .c4 i { background: #EEE4FF; color: var(--violet); }
+
+.stats { position: absolute; top: 1440px; left: 64px; right: 64px; display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 34px; background: var(--glass); border: 2px solid var(--glass-line); backdrop-filter: blur(6px); }
+.stat { padding: 26px 10px 24px; text-align: center; }
+.stat + .stat { border-left: 2px solid var(--glass-line); }
+.stat b { display: block; font-weight: 900; font-size: 62px; line-height: 1; }
+.stat span { font-weight: 700; font-size: 23px; color: var(--mist); }
+
+.tools { position: absolute; top: 1622px; left: 64px; right: 330px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-start; }
+.tools span { padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.25); font-weight: 700; font-size: 23px; }
+
+footer { position: absolute; left: 64px; bottom: 54px; display: grid; gap: 6px; }
+footer .get { font-weight: 800; font-size: 26px; color: var(--mist); letter-spacing: .3px; }
+footer .url { font-weight: 900; font-size: 44px; letter-spacing: -.5px; }
+.free { position: absolute; right: 54px; bottom: 70px; transform: rotate(-12deg); font-weight: 900; font-size: 46px; color: var(--ink); background: var(--white); padding: 10px 26px; border-radius: 18px; box-shadow: 0 14px 30px rgba(14,11,61,.35); }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grain"></div>
+<div class="peel-under"></div>
+<div class="peel-flap"><svg viewBox="0 0 330 330"><defs><linearGradient id="b" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFB08A"/><stop offset="1" stop-color="#FF4F6A"/></linearGradient></defs><path d="M0 330C7.5 181.5 22.5 90 30 30C90 22.5 181.5 7.5 330 0Z" fill="url(#b)"/><path d="M0 330L330 0" stroke="#fff" stroke-opacity=".55" stroke-width="3"/></svg></div>
+
+<header>
+  <img class="logo" src="img/icon.svg" alt="">
+  <h1>PDF Master</h1>
+  <p class="tag">Every PDF tool in your pocket. <b>Private.</b> <b>Offline.</b></p>
+</header>
+
+<section class="stage">
+  <div class="phone back"><div class="screen"><img src="img/web_edit.png" alt=""></div></div>
+  <div class="phone front"><div class="screen"><img src="img/android_home.png" alt=""></div></div>
+
+  <div class="chip c1"><i><svg viewBox="0 0 24 24"><path d="M4 6h10M4 10h10M4 14h6M14 19l1-4 6-6 3 3-6 6z"/></svg></i><div>Edit the text itself<small>even in scanned pages</small></div></div>
+  <div class="chip c2"><i><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i><div>OCR in 15 languages<small>हिन्दी · தமிழ் · বাংলা · English</small></div></div>
+  <div class="chip c3"><i><svg viewBox="0 0 24 24"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"/></svg></i><div>AES-256 protect<small>sign · redact · unlock</small></div></div>
+  <div class="chip c4"><i><svg viewBox="0 0 24 24"><path d="M4 8h14m0 0-4-4m4 4-4 4M20 16H6m0 0 4-4m-4 4 4 4"/></svg></i><div>Word · Excel · PPT<small>convert both ways</small></div></div>
+</section>
+
+<section class="stats">
+  <div class="stat"><b>31</b><span>PDF tools</span></div>
+  <div class="stat"><b>15</b><span>OCR languages</span></div>
+  <div class="stat"><b>0</b><span>files uploaded</span></div>
+</section>
+
+<section class="tools">
+  <span>Merge</span><span>Split</span><span>Compress</span><span>Scan</span><span>Sign</span><span>Translate</span><span>Summarize</span><span>PDF/A</span>
+</section>
+
+<div class="free">Free</div>
+<footer>
+  <div class="get">ANDROID · IPHONE · WEB</div>
+  <div class="url">shekathali.com/pdf</div>
+</footer>
+</body>
+</html>
