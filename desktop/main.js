@@ -45,6 +45,7 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, plugins: true, spellcheck: false },
   });
   win.once('ready-to-show', () => win.show());
+  win.webContents.setVisualZoomLevelLimits(1, 1);
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('blob:')) return { action: 'allow', overrideBrowserWindowOptions: { width: 1000, height: 820, autoHideMenuBar: true, webPreferences: { plugins: true } } };
     if (/^https?:/.test(url)) shell.openExternal(url);
@@ -63,7 +64,8 @@ function buildMenu() {
       { role: 'quit', label: 'Exit' },
     ] },
     { label: '&Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
-    { label: '&View', submenu: [{ role: 'reload' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
+    // Ctrl +/−/0 and Ctrl+wheel zoom the PDF (handled in the viewer), not the whole window.
+    { label: '&View', submenu: [{ role: 'reload' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
     { label: '&Help', submenu: [
       { label: 'Make PDF Master the default PDF app…', click: () => shell.openExternal('ms-settings:defaultapps') },
       { label: 'PDF Master website', click: () => shell.openExternal('https://shekathali.com/pdf/') },
