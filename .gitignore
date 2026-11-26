@@ -5,3 +5,6 @@ local.properties
 .idea/
 .kotlin/
 /release-keystore.jks
+
+# desktop app icons live in desktop/build
+!desktop/build/
