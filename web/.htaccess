@@ -5,6 +5,7 @@
   AddType application/manifest+json .webmanifest
   AddType font/ttf .ttf
   AddType application/vnd.android.package-archive .apk
+  AddType application/octet-stream .exe
 </IfModule>
 <IfModule mod_headers.c>
   # the service worker and app shell must always revalidate so updates arrive

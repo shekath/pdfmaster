@@ -19,7 +19,7 @@ Requires Android 8.0 or newer.
 
 ## Windows (desktop app)
 
-`PDF-Master-Setup-1.1.0.exe` installs PDF Master for the current user (no admin rights), adds Start Menu and Desktop
+[`PDF-Master-Setup-1.1.0.exe`](https://shekathali.com/pdf/windows/PDF-Master-Setup-1.1.0.exe) installs PDF Master for the current user (no admin rights), adds Start Menu and Desktop
 shortcuts, and registers it for PDF files: right-click any PDF → **Open with → PDF Master**. To open every PDF with it
 by double-click, tick "Choose PDF Master as the default app" on the installer's last page (or Help → Make PDF Master the
 default PDF app) and select it in Windows Settings. PDFs open in a viewer with one-tap shortcuts to the tools.
