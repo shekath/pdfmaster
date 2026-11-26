@@ -31,7 +31,7 @@ export const ICONS = {
   compare: 'M9 4H5v16h4M15 4h4v16h-4M12 2v20',
   summarize: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z',
   translate: 'M4 5h8M8 3v2M6 5c0 4 4 7 6 8M10 5c0 3-3 6-6 8M13 21l4-9 4 9M14.5 18h5',
-  menu: 'M4 7h16M4 12h16M4 17h16', back: 'M15 5l-7 7 7 7', close: 'M6 6l12 12M18 6 6 18', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5',
+  menu: 'M4 7h16M4 12h16M4 17h16', minus: 'M5 12h14', folderOpen: 'M3 7h6l2 2h10v3M3 7v12h15l3-7H6l-3 7', back: 'M15 5l-7 7 7 7', close: 'M6 6l12 12M18 6 6 18', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5',
   sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
   moon: 'M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z', phone: 'M7 2h10v20H7zM11 18h2',
   up: 'M6 15l6-6 6 6', down: 'M6 9l6 6 6-6', left: 'M15 6l-6 6 6 6', right: 'M9 6l6 6-6 6', plus: 'M12 5v14M5 12h14',

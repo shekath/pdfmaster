@@ -1,0 +1,67 @@
+{
+  "name": "pdf-master",
+  "productName": "PDF Master",
+  "version": "1.1.0",
+  "description": "Every PDF tool on your PC: merge, split, compress, convert, edit, sign, OCR and more. Files stay on your computer.",
+  "author": "PDF Master",
+  "homepage": "https://shekathali.com/pdf/",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "bash build-win.sh"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "resedit": "^2.0.3"
+  },
+  "build": {
+    "appId": "com.shekathali.pdfmaster",
+    "productName": "PDF Master",
+    "copyright": "PDF Master",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "build/icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "../web",
+        "to": "web",
+        "filter": [
+          "**/*",
+          "!README.md",
+          "!.nojekyll",
+          "!.htaccess"
+        ]
+      },
+      {
+        "from": "build/pdf-file.ico",
+        "to": "pdf-file.ico"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "afterPack": "./afterPack.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shekath/pdfmaster.git"
+  }
+}

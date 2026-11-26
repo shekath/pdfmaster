@@ -1,7 +1,7 @@
 // Offline support: app shell is precached; libraries, fonts and models are cached on first use.
-const VERSION = 'pdfmaster-v3';
+const VERSION = 'pdfmaster-v4';
 const SHELL = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/logo.svg',
-  'js/app.js', 'js/tools.js', 'js/ui.js', 'js/lib.js', 'js/pdfops.js', 'js/render.js', 'js/office.js', 'js/ocr.js', 'js/smart.js', 'js/runner.js', 'js/editor.js', 'js/organize.js'];
+  'js/app.js', 'js/tools.js', 'js/ui.js', 'js/lib.js', 'js/pdfops.js', 'js/render.js', 'js/office.js', 'js/ocr.js', 'js/smart.js', 'js/runner.js', 'js/editor.js', 'js/organize.js', 'js/viewer.js'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

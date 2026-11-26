@@ -25,6 +25,7 @@ function go(screen, extra = {}, push = true) {
 window.addEventListener('popstate', () => {
   if (S.running) { history.pushState({ screen: S.screen }, ''); return; }
   if (S.screen === 'done') { S.screen = 'form'; } else if (S.screen === 'editor' || S.screen === 'organize') S.screen = 'form'; else S.screen = 'home';
+  if (S.screen === 'home') S.viewFile = null;
   render();
 });
 
@@ -96,8 +97,9 @@ function render() {
   if (S.screen === 'done') return renderDone();
   if (S.screen === 'editor') return import('./editor.js').then((m) => m.mountEditor(app, ctx()));
   if (S.screen === 'organize') return import('./organize.js').then((m) => m.mountOrganizer(app, ctx()));
+  if (S.screen === 'viewer') return import('./viewer.js').then((m) => m.mountViewer(app, ctx()));
 }
-const ctx = () => ({ S, tool: S.tool, file: S.files[0]?.file, back: () => history.back(), runJob, h, progress: (p, t) => setProgress(p, t), ocrLang: () => store.get('ocrLang', 'eng'), setOcrLang: (c) => store.set('ocrLang', c), renderBusy: busyPanel });
+const ctx = () => ({ S, tool: S.tool, file: S.files[0]?.file, back: () => history.back(), runJob, h, progress: (p, t) => setProgress(p, t), useTool: (t, f) => { S.carried = [f]; if (t) openTool(t); else go('home'); }, ocrLang: () => store.get('ocrLang', 'eng'), setOcrLang: (c) => store.set('ocrLang', c), renderBusy: busyPanel });
 
 let deferredInstall = null;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; if (S.screen === 'home') render(); });
@@ -113,6 +115,7 @@ function renderHome() {
   app.replaceChildren(h('div', { class: 'wrap' },
     h('div', { class: 'row', style: { marginTop: '4px' } },
       iconBtn('menu', 'Menu', openDrawer), h('img', { src: 'icons/logo.svg', alt: '', width: 34, height: 34, style: { flex: 'none' } }), h('h1', { class: 'grow' }, 'PDF Master'),
+      iconBtn('folderOpen', 'Open a PDF', async () => { const [f] = await pickFiles('.pdf,application/pdf', false); if (f) openViewer(f); }),
       iconBtn(isDark() ? 'sun' : 'moon', isDark() ? 'Switch to light theme' : 'Switch to dark theme', () => { applyTheme(isDark() ? 'light' : 'dark'); render(); })),
     h('div', { class: 'row small muted', style: { margin: '2px 0 0 54px' } }, icon('shield', 14), 'Every PDF tool. Files stay on your device.'),
     !standalone() && isIOS && h('div', { class: 'install' }, icon('share'), h('div', {}, h('b', {}, 'Install on iPhone: '), 'tap the Share button, then “Add to Home Screen”.')),
@@ -232,7 +235,15 @@ function renderDone() {
 }
 
 // share target / file handling from launch queue (installed desktop/Android)
-if ('launchQueue' in window) window.launchQueue.setConsumer(async (p) => { if (p.files?.length) { S.carried = await Promise.all(p.files.map((fh) => fh.getFile())); render(); } });
+function openViewer(file) { closeDrawer(); go('viewer', { viewFile: file }); }
+async function receiveFiles(files) {
+  if (!files.length) return;
+  if (files.length === 1 && /\.pdf$/i.test(files[0].name)) openViewer(files[0]);
+  else { S.carried = files; go('home'); }
+}
+if ('launchQueue' in window) window.launchQueue.setConsumer(async (p) => { if (p.files?.length) receiveFiles(await Promise.all(p.files.map((fh) => fh.getFile()))); });
+// Windows desktop app: PDFs opened from Explorer ("Open with PDF Master") or File > Open arrive here.
+if (window.pdfmaster?.onOpenFiles) window.pdfmaster.onOpenFiles((list) => receiveFiles(list.map((f) => new File([f.data], f.name, { type: f.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '' }))));
 
 applyTheme(store.get('theme', 'system'));
 history.replaceState({ screen: 'home' }, '');

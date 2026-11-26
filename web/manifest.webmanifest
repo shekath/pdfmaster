@@ -5,6 +5,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "file_handlers": [{ "action": "./", "accept": { "application/pdf": [".pdf"] } }],
   "background_color": "#F6F7FA",
   "theme_color": "#2B3BFF",
   "icons": [
